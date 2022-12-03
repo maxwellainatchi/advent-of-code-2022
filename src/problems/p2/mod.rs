@@ -1,5 +1,8 @@
 use std::{fs, ops::Sub, path::Path};
 
+use num_derive::{FromPrimitive, ToPrimitive};
+use num_traits::FromPrimitive;
+
 fn read_input(sample: bool) -> String {
     let file_path = Path::new(file!());
     let path = file_path.with_file_name(if sample {
@@ -11,7 +14,7 @@ fn read_input(sample: bool) -> String {
     return contents;
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, FromPrimitive, ToPrimitive)]
 enum RPS {
     Rock,
     Paper,
@@ -44,17 +47,16 @@ impl RPS {
         }
     }
 
+    fn from_outcome(theirs: RPS, outcome: Outcome) -> RPS {
+        FromPrimitive::from_i32((theirs as i32 + outcome as i32 - 1 + 3) % 3).unwrap()
+    }
+
     fn points(&self) -> i32 {
         (*self as i32) + 1
     }
 }
 
-struct Match {
-    yours: RPS,
-    theirs: RPS,
-}
-
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, FromPrimitive)]
 enum Outcome {
     Loss,
     Draw,
@@ -62,51 +64,83 @@ enum Outcome {
 }
 
 impl Outcome {
+    fn from_results(result: &str) -> Outcome {
+        match result {
+            "X" => Outcome::Loss,
+            "Y" => Outcome::Draw,
+            "Z" => Outcome::Win,
+            _ => panic!("Invalid outcome result, {}", result),
+        }
+    }
+
     fn points(&self) -> i32 {
         (*self as i32) * 3
     }
 }
 
+struct Match {
+    yours: RPS,
+    outcome: Outcome,
+}
+
 impl Match {
-    fn outcome(&self) -> Outcome {
-        match self.yours - self.theirs {
-            0 => Outcome::Draw,
-            1 | -2 => Outcome::Win,
-            2 | -1 => Outcome::Loss,
-            _ => panic!("Invalid input"),
+    fn from_results(theirs: RPS, yours: RPS) -> Match {
+        Match {
+            yours,
+            outcome: Match::outcome(theirs, yours),
         }
     }
 
+    fn from_outcome(theirs: RPS, outcome: Outcome) -> Match {
+        Match {
+            yours: RPS::from_outcome(theirs, outcome),
+            outcome,
+        }
+    }
+
+    fn outcome(theirs: RPS, yours: RPS) -> Outcome {
+        FromPrimitive::from_i32((yours - theirs + 1 + 3) % 3).unwrap()
+    }
+
     fn score(&self) -> i32 {
-        return self.yours.points() + self.outcome().points();
+        return self.yours.points() + self.outcome.points();
     }
 }
 
-fn parse_input(contents: String) -> Vec<Match> {
+fn parse_input_part1(contents: &str) -> Vec<Match> {
     contents
         .split("\n")
         .map(|list| {
             let results: Vec<&str> = list.split(" ").collect();
             let theirs = RPS::from_theirs(results[0]);
             let yours = RPS::from_yours(results[1]);
-            return Match { theirs, yours };
+            return Match::from_results(theirs, yours);
         })
         .collect()
 }
 
-fn solve_part1(parsed: &Vec<Match>) -> i32 {
-    parsed.iter().map(|m| m.score()).sum()
+fn parse_input_part2(contents: &str) -> Vec<Match> {
+    contents
+        .split("\n")
+        .map(|list| {
+            let results: Vec<&str> = list.split(" ").collect();
+            let theirs = RPS::from_theirs(results[0]);
+            let outcome = Outcome::from_results(results[1]);
+            return Match::from_outcome(theirs, outcome);
+        })
+        .collect()
 }
 
-fn solve_part2(parsed: &Vec<Match>) -> i32 {
-    0
+fn solve(parsed: &Vec<Match>) -> i32 {
+    parsed.iter().map(|m| m.score()).sum()
 }
 
 pub fn main() {
     let input = read_input(false);
-    let parsed = parse_input(input);
-    let solution_part1 = solve_part1(&parsed);
+    let parsed_part1 = parse_input_part1(&input);
+    let solution_part1 = solve(&parsed_part1);
     println!("Part 1: {}", solution_part1);
-    let solution_part2 = solve_part2(&parsed);
+    let parsed_part2 = parse_input_part2(&input);
+    let solution_part2 = solve(&parsed_part2);
     println!("Part 2: {}", solution_part2)
 }
