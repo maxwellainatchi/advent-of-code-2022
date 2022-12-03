@@ -24,6 +24,7 @@ fn priority(char: char) -> usize {
 struct Rucksack<'a> {
     compartment1: &'a str,
     compartment2: &'a str,
+    original: &'a str,
 }
 
 impl<'a> Rucksack<'a> {
@@ -32,6 +33,7 @@ impl<'a> Rucksack<'a> {
         Rucksack {
             compartment1: compartments.0,
             compartment2: compartments.1,
+            original: line,
         }
     }
 }
@@ -47,7 +49,7 @@ fn to_set(compartment: &str) -> BTreeSet<char> {
     })
 }
 
-fn solve_part1(rucksacks: Vec<Rucksack>) -> usize {
+fn solve_part1(rucksacks: &Vec<Rucksack>) -> usize {
     let mut all_solutions: Vec<usize> = vec![];
     for rucksack in rucksacks {
         let set1 = to_set(rucksack.compartment1);
@@ -58,9 +60,23 @@ fn solve_part1(rucksacks: Vec<Rucksack>) -> usize {
     all_solutions.iter().sum()
 }
 
+fn solve_part2(rucksacks: &Vec<Rucksack>) -> usize {
+    let mut all_badges: Vec<usize> = vec![];
+    for i in (0..rucksacks.len()).step_by(3) {
+        let set1 = to_set(rucksacks[i].original);
+        let set2 = to_set(rucksacks[i + 1].original);
+        let set3 = to_set(rucksacks[i + 2].original);
+        let isec = set1.intersection(&set2).filter(|char| set3.contains(char));
+        all_badges.push(priority(*isec.min().unwrap()))
+    }
+    all_badges.iter().sum()
+}
+
 pub fn main() {
     let input = read_input(false);
     let parsed = parse(&input);
-    let solution = solve_part1(parsed);
-    println!("Part 1: {}", solution)
+    let solution_part1 = solve_part1(&parsed);
+    println!("Part 1: {}", solution_part1);
+    let solution_part2 = solve_part2(&parsed);
+    println!("Part 2: {}", solution_part2)
 }
