@@ -7,6 +7,7 @@ fn main() {
     match args.get(1).map(|a| a.as_str()) {
         Some("1") => problems::p1::main(),
         Some("2") => problems::p2::main(),
-        _ => problems::p2::main(),
+        Some("3") => problems::p3::main(),
+        _ => problems::p3::main(),
     }
 }
