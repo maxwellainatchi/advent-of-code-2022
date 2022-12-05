@@ -53,10 +53,37 @@ fn one_contains_other(r1: &RangeInclusive<i32>, r2: &RangeInclusive<i32>) -> boo
     return contains;
 }
 
+fn overlaps(r1: &RangeInclusive<i32>, r2: &RangeInclusive<i32>) -> bool {
+    let signs = (
+        (r2.start() - r1.end()).signum(),
+        (r2.end() - r1.start()).signum(),
+    );
+    let overlaps = signs.0 != signs.1 || signs.0 == 0;
+    // println!(
+    //     "{:#?} {} {:#?}: {:?}",
+    //     r1,
+    //     if overlaps {
+    //         "overlaps"
+    //     } else {
+    //         "does not overlap"
+    //     },
+    //     r2,
+    //     signs
+    // );
+    return overlaps;
+}
+
 fn solve_part1(parsed: &Vec<(Elf, Elf)>) -> i32 {
     return parsed
         .iter()
         .filter(|(e1, e2)| one_contains_other(&e1.range, &e2.range))
+        .count() as i32;
+}
+
+fn solve_part2(parsed: &Vec<(Elf, Elf)>) -> i32 {
+    return parsed
+        .iter()
+        .filter(|(e1, e2)| overlaps(&e1.range, &e2.range))
         .count() as i32;
 }
 
@@ -65,4 +92,6 @@ pub fn main() {
     let parsed = parse(&input);
     let solution_part1 = solve_part1(&parsed);
     println!("Part 1: {}", solution_part1);
+    let solution_part2 = solve_part2(&parsed);
+    println!("Part 2: {}", solution_part2);
 }
