@@ -1,4 +1,10 @@
-use std::{fs, ops::RangeInclusive, path::Path};
+use std::{fs, path::Path};
+
+struct Area {
+    start: i32,
+    end: i32,
+}
+struct Pair(Area, Area);
 
 fn read_input(sample: bool) -> String {
     let file_path = Path::new(file!());
@@ -11,87 +17,46 @@ fn read_input(sample: bool) -> String {
     return contents;
 }
 
-struct Elf {
-    range: RangeInclusive<i32>,
+fn parse_range(range: &str) -> Area {
+    let mut bounds = range.split("-").map(|b| b.parse::<i32>().unwrap());
+    return Area {
+        start: bounds.next().unwrap(),
+        end: bounds.next().unwrap(),
+    };
 }
 
-fn parse_range(range: &str) -> RangeInclusive<i32> {
-    let mut bounds = range.split("-");
-    let start = bounds.next().unwrap().parse::<i32>().unwrap();
-    let end = bounds.next().unwrap().parse::<i32>().unwrap();
-    return RangeInclusive::new(start, end);
-}
-
-fn parse(input: &str) -> Vec<(Elf, Elf)> {
+fn parse(input: &str) -> Vec<Pair> {
     input
         .split("\n")
         .map(|pair| {
-            let mut ranges = pair.split(",");
-            let r1 = parse_range(ranges.next().unwrap());
-            let r2 = parse_range(ranges.next().unwrap());
-            return (Elf { range: r1 }, Elf { range: r2 });
+            let mut ranges = pair.split(",").map(|r| parse_range(r));
+            return Pair(ranges.next().unwrap(), ranges.next().unwrap());
         })
         .collect()
 }
 
-fn one_contains_other(r1: &RangeInclusive<i32>, r2: &RangeInclusive<i32>) -> bool {
-    let start_diff = r1.start() - r2.start();
-    let end_diff = r1.end() - r2.end();
-    let signs = (start_diff.signum(), end_diff.signum());
-    let contains = signs.0 * signs.1 <= 0;
-    // println!(
-    //     "{:#?} {} {:#?}: {:?}",
-    //     r1,
-    //     if contains {
-    //         "contains"
-    //     } else {
-    //         "does not contain"
-    //     },
-    //     r2,
-    //     signs
-    // );
-    return contains;
+fn one_contains_other(pair: &Pair) -> bool {
+    let diffs = (pair.0.start - pair.1.start, pair.0.end - pair.1.end);
+    let signs = (diffs.0.signum(), diffs.1.signum());
+    return signs.0 * signs.1 <= 0;
 }
 
-fn overlaps(r1: &RangeInclusive<i32>, r2: &RangeInclusive<i32>) -> bool {
-    let signs = (
-        (r2.start() - r1.end()).signum(),
-        (r2.end() - r1.start()).signum(),
-    );
+fn overlaps(pair: &Pair) -> bool {
+    let diffs = ((pair.1.start - pair.0.end), (pair.1.end - pair.0.start));
+    let signs = (diffs.0.signum(), diffs.1.signum());
     let overlaps = signs.0 != signs.1 || signs.0 == 0;
-    // println!(
-    //     "{:#?} {} {:#?}: {:?}",
-    //     r1,
-    //     if overlaps {
-    //         "overlaps"
-    //     } else {
-    //         "does not overlap"
-    //     },
-    //     r2,
-    //     signs
-    // );
     return overlaps;
 }
 
-fn solve_part1(parsed: &Vec<(Elf, Elf)>) -> i32 {
-    return parsed
-        .iter()
-        .filter(|(e1, e2)| one_contains_other(&e1.range, &e2.range))
-        .count() as i32;
-}
-
-fn solve_part2(parsed: &Vec<(Elf, Elf)>) -> i32 {
-    return parsed
-        .iter()
-        .filter(|(e1, e2)| overlaps(&e1.range, &e2.range))
-        .count() as i32;
+fn solve(parsed: &Vec<Pair>, comparison: fn(&Pair) -> bool) -> i32 {
+    return parsed.iter().filter(|pair| comparison(pair)).count() as i32;
 }
 
 pub fn main() {
     let input = read_input(false);
     let parsed = parse(&input);
-    let solution_part1 = solve_part1(&parsed);
+    let solution_part1 = solve(&parsed, one_contains_other);
     println!("Part 1: {}", solution_part1);
-    let solution_part2 = solve_part2(&parsed);
+    let solution_part2 = solve(&parsed, overlaps);
     println!("Part 2: {}", solution_part2);
 }
