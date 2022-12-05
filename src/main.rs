@@ -8,6 +8,7 @@ fn main() {
         Some("1") => problems::p1::main(),
         Some("2") => problems::p2::main(),
         Some("3") => problems::p3::main(),
-        _ => problems::p3::main(),
+        Some("4") => problems::p4::main(),
+        _ => problems::p4::main(),
     }
 }
